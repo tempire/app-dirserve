@@ -35,15 +35,14 @@ These options are available:
 EOF
 print $usage and exit if $help;
 
+# Set home dir
 app->static->root($root);
 
 get '/(*path)' => { path => '' } => sub {
 	my $self = shift;
 
 	my $path = $self->param('path');
-	$path =~ s|/$||;
-
-	my $dir = "$root/$path";
+	my $dir  = "$root/$path";
 	$dir =~ s|/[^/]+/$|/| if $path;
 
 	opendir my ($dh), $dir;
@@ -51,18 +50,17 @@ get '/(*path)' => { path => '' } => sub {
 	closedir $dh;
 
 	# Remove parent dirs
-	@items = grep $_->{name} !~ /\.\./, 
-		splice @items, 2
-			if !$with_dots or !$path;
+	@items = grep $_->{name} !~ /\.\./, splice @items, 2
+	  if !$with_dots or !$path;
 
 	$self->stash(
-		dir => $dir,
+		dir   => $dir,
 		items => \@items
 	);
 
 	$self->render('listing');
 }
-	if !$index_page;
+  if !$index_page;
 
 get '/' => sub {
 	shift->render_static($index_page);
