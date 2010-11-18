@@ -14,3 +14,6 @@
 	  --index-page   Page to show by default.  Defaults to directory listing.
 	  --port         Port to serve on.  Defaults to 3000.
 	  --with-dots    Allow navigating to parent directories via '..'.
+
+## Screenshot
+<img src="screenshot.png" />
