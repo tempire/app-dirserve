@@ -16,4 +16,4 @@
 	  --with-dots    Allow navigating to parent directories via '..'.
 
 ## Screenshot
-<img src="blob/master/screenshot.png" />
+<img src="raw/master/screenshot.png" />
