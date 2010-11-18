@@ -1,0 +1,142 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Cwd 'cwd';
+use Data::Dumper;
+use Getopt::Long 'GetOptions';
+
+use Mojo::Server::Daemon;
+use Mojolicious::Lite;
+
+my $root = cwd;
+my $index_page;
+my $port = 3000;
+my $with_dots;
+my $help;
+
+GetOptions(
+	'directory=s'  => \$root,
+	'index-page=s' => \$index_page,
+	'port=s'       => \$port,
+	'with-dots'    => \$with_dots,
+	'help'         => \$help,
+);
+
+my $usage = <<"EOF";
+usage: dirserve [OPTIONS]
+
+These options are available:
+  --directory    Directory to serve.  Defaults to current directory.
+  --index-page   Page to show by default.  Defaults to directory listing.
+  --port         Port to serve on.  Defaults to 3000.
+  --with-dots    Allow navigating to parent directories via '..'.
+  --help         This message.
+EOF
+print $usage and exit if $help;
+
+app->static->root($root);
+
+get '/(*path)' => { path => '' } => sub {
+	my $self = shift;
+
+	my $path = $self->param('path');
+	$path =~ s|/$||;
+
+	my $dir = "$root/$path";
+	$dir =~ s|/[^/]+/$|/| if $path;
+
+	opendir my ($dh), $dir;
+	my @items = map +{ name => $_, is_dir => -d "$root/$path/$_" }, readdir $dh;
+	closedir $dh;
+
+	# Remove parent dirs
+	@items = grep $_->{name} !~ /\.\./, 
+		splice @items, 2
+			if !$with_dots or !$path;
+
+	$self->stash(
+		dir => $dir,
+		items => \@items
+	);
+
+	$self->render('listing');
+}
+	if !$index_page;
+
+get '/' => sub {
+	shift->render_static($index_page);
+};
+
+Mojo::Server::Daemon->new->silent(1)->listen("http://*:$port")->run;
+
+1;
+
+__DATA__
+
+@@ listing.html.ep
+
+% my $class = begin
+%	if (shift->{is_dir}) {
+		class="dir"
+%	}
+% end
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+	font-family: "Lucida Grande", tahoma, sans-serif;
+	font-size: 100%;
+	margin: 0;
+	width: 100%;
+}
+h1 {
+	background: #999; /* for non-css3 browsers */
+	background: -webkit-gradient(linear, left top, left bottom, from(#A2C6E5), to(#2B6699)); /* webkit */
+	background: -moz-linear-gradient(top,  #A2C6E5,  #2B6699); /* mozilla */
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#A2C6E5', endColorstr='#2B6699'); /* ie */
+	padding: 10px 0 10px 10px;
+	margin: 0;
+	color: white;
+}
+li.dir {
+	font-weight: bold;
+}
+hr {
+	border: solid silver 1px;
+	width: 95%;
+}
+</style>
+</head>
+<base href="/">
+<body>
+<h1>Directory listing for <%= $dir %></h1>
+<ul>
+% foreach (@$items) {
+	<li<%== $class->($_) %>>
+		<a href="<%= $path %>/<%= $_->{name} %>"><%= $_->{name} %></a>
+	</li>
+% }
+</ul>
+<hr />
+</body>
+</html>
+
+@@ favicon.ico (base64)
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABm
+JLR0QAAAAAAAD5Q7t/AAAB5ElEQVQ4y+2SPWtTcRTGf/ctNzE1
+JEQDNaHSF99tcZAEpBRXXRSlk+DYyVk/Q4cuxTXubt2UDhHFwV
+Cp0CzWNLkELJGSkGjSNMm9938cYkJK9Bv4wIHnOZw3OA/8hzYu
+srmi5J0WkZDJnZkgxVqPastjZTbMwnmbRscndsZg6cpFbWJANl
+eURhdW00laJy6b2yUep5Mko0HeFo747DRJxWy+N3osz03x7N61
+Qe/7L2VZ3yrIWnZXaq2eDNH31CleqXVERKTT6chadlfyX6sCYH
+6qHHNrPsHzBwmUUnieB4Ch63ieP+KpmI1SCjMQBGDHaQKgV1se
+yeggqZTC931838d13VN8qA1N2Hxyna6YZHNF0Vdmw2xul6i3+4
+gISql/hud5+L6PbdusppPknRZmPGwSCZlEQhaGJqMrlFITL9N1
+fcR/1H6SigYwj/uKoKVjGRqgoZsBoD8xwDAMdF3Hsixe5w/5dt
+jkdio4eOP6VkFKdZdfXZ+XT5eITwVGZ7uui2VZiGb8WQIbbw6Y
+iwiPli9rIx/s7VfkQ7kDwN2bF8gXj8hcSnAjFQHg1bsDnHoPgL
+OW8OLhojbhxL39ipxIgB2nycdym5lzIQCa7T7zcYvF6YG+n1mY
+dOI4hiYZR+bq9F9rfwNS4g/5j28nMwAAAABJRU5ErkJggg==
