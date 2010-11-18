@@ -1,11 +1,12 @@
-Simple directory listing over HTTP
+## Simple directory listing over HTTP
 
 - Inspired by 'python -m SimpleHTTPServer'
 - Uses Perl & Mojolicious for maximum pwn
 - Only one pre-requisite:
   - Mojolicious
 
-Usage
+## Usage
+
 	usage: dirserve [OPTIONS]
 	
 	These options are available:
