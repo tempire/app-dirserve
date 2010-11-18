@@ -16,4 +16,4 @@
 	  --with-dots    Allow navigating to parent directories via '..'.
 
 ## Screenshot
-<img src="raw/master/screenshot.png" />
+<img src="https://github.com/tempire/app-dirserve/raw/master/screenshot.png" />
