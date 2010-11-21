@@ -4,24 +4,10 @@ use strict;
 use warnings;
 use Cwd 'cwd';
 use Data::Dumper;
-use Getopt::Long 'GetOptions';
+use Getopt::Long;
 
-use Mojo::Server::Daemon;
-use Mojolicious::Lite;
 
-my $root = cwd;
-my $index_page;
-my $port = 3000;
-my $with_dots;
-my $help;
-
-GetOptions(
-	'directory=s'  => \$root,
-	'index-page=s' => \$index_page,
-	'port=s'       => \$port,
-	'with-dots'    => \$with_dots,
-	'help'         => \$help,
-);
+# Configure
 
 my $usage = <<"EOF";
 usage: dirserve [OPTIONS]
@@ -33,25 +19,60 @@ These options are available:
   --with-dots    Allow navigating to parent directories via '..'.
   --help         This message.
 EOF
-print $usage and exit if $help;
 
-# Set home dir
-app->static->root($root);
+my @GETOPT_CONFIG = qw/
+	bundling
+/;
+
+my @GETOPT_SPEC = qw/
+	directory=s
+	index=s
+	port=s
+	exclude=s
+	with-dots
+	help
+/;
+
+my %opt = (
+	directory => cwd,
+	port      => 3000
+);
+
+my $p = Getopt::Long::Parser->new;
+$p->configure(@GETOPT_CONFIG);
+$p->getoptions( \%opt, @GETOPT_SPEC );
+
+print $usage and exit if $opt{help};
+
+
+
+package App::dirserve;
+
+use Data::Dumper;
+use Mojolicious::Lite;
+use Mojo::Server::Daemon;
+
+app->static->root($opt{directory});
+
+get '/' => sub {
+	shift->render_static($opt{index});
+}
+	if $opt{index};
 
 get '/(*path)' => { path => '' } => sub {
 	my $self = shift;
-
 	my $path = $self->param('path');
-	my $dir  = "$root/$path";
-	$dir =~ s|/[^/]+/$|/| if $path;
+
+	my $dir  = "$opt{directory}/$path";
+	$dir =~ s|/$|| if substr($dir, -1, 1) eq '/';
 
 	opendir my ($dh), $dir;
-	my @items = map +{ name => $_, is_dir => -d "$root/$path/$_" }, readdir $dh;
+	my @items = map +{ name => $_, is_dir => -d "$dir/$_" }, readdir $dh;
 	closedir $dh;
 
 	# Remove parent dirs
-	@items = grep $_->{name} !~ /\.\./, splice @items, 2
-	  if !$with_dots or !$path;
+	@items = grep $_->{name} !~ /^(?:\.|\.\.)$/, @items
+	  if !$path;
 
 	$self->stash(
 		dir   => $dir,
@@ -59,14 +80,9 @@ get '/(*path)' => { path => '' } => sub {
 	);
 
 	$self->render('listing');
-}
-  if !$index_page;
-
-get '/' => sub {
-	shift->render_static($index_page);
 };
 
-Mojo::Server::Daemon->new->silent(1)->listen("http://*:$port")->run;
+Mojo::Server::Daemon->new->silent(1)->listen("http://*:$opt{port}")->run;
 
 1;
 
