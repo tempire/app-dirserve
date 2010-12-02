@@ -13,7 +13,8 @@
 	  --directory    Directory to serve.  Defaults to current directory.
 	  --index-page   Page to show by default.  Defaults to directory listing.
 	  --port         Port to serve on.  Defaults to 3000.
-	  --with-dots    Allow navigating to parent directories via '..'.
+	  --no-dots      No navigating to parent directories via '..'.
+	  --help         This message.
 
 ## Screenshot
 <img src="https://github.com/tempire/app-dirserve/raw/master/screenshot.png" />
