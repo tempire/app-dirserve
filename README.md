@@ -7,8 +7,8 @@
 
 ## Install
 
-curl -L cpanmin.us | perl - http://latest.mojolicio.us<br />
-curl -O https://github.com/tempire/app-dirserve/raw/master/dirserve<br />
+curl -L cpanmin.us | perl - http://latest.mojolicio.us
+curl -O https://github.com/tempire/app-dirserve/raw/master/dirserve
 chmod +x dirserve
 
 ## Usage
