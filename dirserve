@@ -86,6 +86,7 @@ get '/(*dir)' => { dir => '' } => sub {
 	$self->render('listing');
 };
 
+app->secret('cookie-phrase');
 Mojo::Server::Daemon->new->silent(1)->listen( ["http://*:$opt{port}"] )->run;
 
 1;
